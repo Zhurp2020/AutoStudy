@@ -1,8 +1,16 @@
 from selenium import webdriver
 import time
+import re
 
-username = input('输入用户名')
-password = input('输入密码')
+daan = '答案'
+file = open('answer.txt','rb')
+answers = ['A','B','C','D','√','×']
+lines = file.readlines()
+
+username = input('用户名')
+password = input('密码')
+
+findpro = re.compile(r'】.*?（')
 
 driver = webdriver.Chrome()
 driver.get("http://www.elearning.shu.edu.cn/portal")
@@ -27,7 +35,7 @@ inputaction.perform()
 
 driver.get('http://mooc1.elearning.shu.edu.cn/mycourse/studentcourse?courseId=204664376&clazzid=10593708&enc=8782736c942a7296a38d6ca117ebfe5f')
 
-for i in range(2) :
+for i in range(4,6) :
     coureses = driver.find_elements_by_class_name('articlename')
     gotocourse = webdriver.ActionChains(driver)
     gotocourse.click(coureses[i])
@@ -40,6 +48,9 @@ for i in range(2) :
         print('未发现视频，返回')
         driver.back()
         continue
+    title = driver.find_element_by_tag_name('h1').get_attribute('textContent')
+    print(title)
+
     time.sleep(5)
     driver.switch_to.frame('iframe')
     video = driver.find_element_by_class_name('ans-attach-ct')
@@ -56,4 +67,59 @@ for i in range(2) :
         print('已播放{}/{}'.format(now,duration))
         if now == duration :
             break
+        try :
+            pass
+        except: 
+            continue
+
+    driver.switch_to.default_content()
+    testtag = driver.find_element_by_id('dct2')
+    gotest = webdriver.ActionChains(driver)
+    gotest.click(testtag)
+    gotest.perform()
+
+
+
+    time.sleep(3)
+    driver.switch_to.frame('iframe')
+    driver.switch_to.frame(0)
+    driver.switch_to.frame('frame_content') 
+    porblems = driver.find_elements_by_css_selector('.Zy_TItle')
+
+
+    anslist = []
+
+    for j in porblems:
+        text = j.get_attribute('textContent')
+        protext = findpro.findall(text)
+        for k in protext:
+            k = k.lstrip('】').rstrip('（')
+            print(k)
+            for l in range(len(lines)):
+                words = str(lines[l].decode('utf-8'))
+                if k in words:
+                    break
+            while True :
+                words = str(lines[l].decode('utf-8'))
+                if daan in words :
+                    for m in words :
+                        if m in answers:
+                            anslist.append(m)
+                            break
+                    break
+                else:
+                    l += 1
+
+    allinput = driver.find_elements_by_tag_name('input')
+    allchoiceA = []
+    for j in allinput :
+        if j.get_attribute('value') == 'A':
+            allchoiceA.append(j)
+            tempA = j
+            print('yes')
+            break
+    
+    choose = webdriver.ActionChains(driver)
+    choose.click(tempA)
+    choose.perform()
     
