@@ -1,14 +1,15 @@
 from selenium import webdriver
+from selenium.webdriver.common.keys import Keys
 import time
 import re
+
+username,password = input('用户名 密码').split()
 
 daan = '答案'
 file = open('answer.txt','rb')
 answers = ['A','B','C','D','√','×']
 lines = file.readlines()
 
-username = input('用户名')
-password = input('密码')
 
 findpro = re.compile(r'】.*?（')
 
@@ -27,9 +28,9 @@ submit = driver.find_element_by_name('login_submit')
 
 inputaction = webdriver.ActionChains(driver)
 inputaction.click(userin)
-inputaction.send_keys_to_element(userin,'')
+inputaction.send_keys_to_element(userin,username)
 inputaction.click(pwdin)
-inputaction.send_keys_to_element(pwdin,'')
+inputaction.send_keys_to_element(pwdin,password)
 inputaction.click(submit)
 inputaction.perform()
 
@@ -50,7 +51,7 @@ for i in range(4,6) :
         continue
     title = driver.find_element_by_tag_name('h1').get_attribute('textContent')
     print(title)
-
+    '''
     time.sleep(5)
     driver.switch_to.frame('iframe')
     video = driver.find_element_by_class_name('ans-attach-ct')
@@ -71,7 +72,7 @@ for i in range(4,6) :
             pass
         except: 
             continue
-
+    '''
     driver.switch_to.default_content()
     testtag = driver.find_element_by_id('dct2')
     gotest = webdriver.ActionChains(driver)
@@ -84,17 +85,16 @@ for i in range(4,6) :
     driver.switch_to.frame('iframe')
     driver.switch_to.frame(0)
     driver.switch_to.frame('frame_content') 
-    porblems = driver.find_elements_by_css_selector('.Zy_TItle')
+    problems = driver.find_elements_by_css_selector('.Zy_TItle')
 
 
     anslist = []
 
-    for j in porblems:
+    for j in problems:
         text = j.get_attribute('textContent')
         protext = findpro.findall(text)
         for k in protext:
             k = k.lstrip('】').rstrip('（')
-            print(k)
             for l in range(len(lines)):
                 words = str(lines[l].decode('utf-8'))
                 if k in words:
@@ -109,17 +109,61 @@ for i in range(4,6) :
                     break
                 else:
                     l += 1
-
+        
     allinput = driver.find_elements_by_tag_name('input')
-    allchoiceA = []
-    for j in allinput :
-        if j.get_attribute('value') == 'A':
-            allchoiceA.append(j)
-            tempA = j
-            print('yes')
-            break
+    allChoiceA = []
+    allChoiceB = []
+    allChoiceC = []
+    allChoiceD = []
+    allChoiceT = []
+    allChoiceF = []
+    for k in allinput :
+        choiceValue = k.get_attribute('value')
+        if choiceValue == 'A':
+            allChoiceA.append(k)
+        elif choiceValue == 'B':
+            allChoiceB.append(k)
+        elif choiceValue == 'C' :
+            allChoiceC.append(k) 
+        elif choiceValue == 'D':
+            allChoiceD.append(k)
+        elif choiceValue == 'true':
+            allChoiceT.append(k)
+        elif choiceValue == 'false':
+            allChoiceF.append(k)
+
+    countChoice = len(allChoiceA)
+
+    for j in range(len(anslist)) :
+        tempans = anslist[j]
+        choose = webdriver.ActionChains(driver)
+        if tempans == 'A' :
+            target = allChoiceA[j]
+        elif tempans == 'B':
+            target = allChoiceB[j]
+        elif tempans == 'C' :
+            target = allChoiceC[j]
+        elif tempans == 'D':
+            target = allChoiceD[j]
+        elif tempans == '√' :
+            target = allChoiceT[j-countChoice]
+        elif tempans == '×':
+            target = allChoiceF[j-countChoice]
+        driver.execute_script("arguments[0].scrollIntoView();",target)
+        target.click()
+        time.sleep(2)
     
-    choose = webdriver.ActionChains(driver)
-    choose.click(tempA)
-    choose.perform()
-    
+
+    submitans = driver.find_element_by_css_selector('.Btn_blue_1')
+    submitans.click()
+    try :
+        confirm = driver.find_element_by_class_name('bluebtn ')
+        confirm.click()
+    except :
+        moveup = webdriver.ActionChains(driver)
+        moveup.send_keys(Keys.PAGE_UP)
+        moveup.perform()
+        confirm = driver.find_element_by_class_name('bluebtn ')
+        confirm.click()
+    driver.back()
+        
