@@ -1,6 +1,6 @@
 import re
 
-problem = '戒网瘾五法中，不包括'
+problem = '全世界有（）大黑土地'
 daan = '答案'
 file = open('answer.txt','rb')
 answers = ['A','B','C','D','√','×']
