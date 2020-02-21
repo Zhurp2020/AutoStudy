@@ -170,7 +170,7 @@ GotoClass(driver)
 # 定位所有课
 courses = FindCourse(driver)
 count = 1
-for i in range(154,160) :
+for i in range(len(courses)) :
     # 定位所有课
     courses = FindCourse(driver)
     # 跳转到具体页面
