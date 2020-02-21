@@ -1,11 +1,32 @@
+# 导入
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 import time
 import re
 
-findpro = re.compile(r'】.*?[？?（(。:]+')
 
+
+# 定义常量
+# 用于匹配题目的正则表达式
+FindProblemText = re.compile(r'】.*?[？?（(。:]+')
+# 用于匹配答案的字符串和列表
+daan = '答案'
+answers = ['A','B','C','D','√','×']
+# 读取题库
+file = open('answer.txt','rb')
+lines = file.readlines()
+file.close()
+# 支持的学校
 SupportSchool = {'1':['上海大学','SHU']}
+for i in range(SupportSchool) :
+    print(i,SupportSchool[i][0],SupportSchool[i][1])
+# 学校，用户名，密码，课程链接
+SchoolName = input('请输入学校序号')
+UserName = input('请输入用户名')
+Password = input('请输入密码')
+ClassUrl = input('请输入课程链接')
+
+
 def login(school,username,password,WebDriver) :
     ''' 
     登录，参数:学校，用户名，密码，webdriver
@@ -17,7 +38,7 @@ def login(school,username,password,WebDriver) :
                 break
             except :
                 continue
-        # 登录按钮
+        # 定位登录按钮并点击
         LoginButton = WebDriver.find_element_by_css_selector('.loginSub') 
         LoginButton.click()
         # 用户名密码输入框，提交按钮
@@ -32,11 +53,11 @@ def login(school,username,password,WebDriver) :
         InputAction.send_keys_to_element(PasswordInput,password)
         InputAction.click(LoginSubmit)
         InputAction.perform()
-def GotoClass(WebDriver,url = 'http://mooc1.elearning.shu.edu.cn/mycourse/studentcourse?courseId=204664376&clazzid=10593708&enc=8782736c942a7296a38d6ca117ebfe5f') :
+def GotoClass(WebDriver) :
     '''
     前往课程页面，driver为必选参数，url默认参数为安全课程
     '''
-    WebDriver.get(url)
+    WebDriver.get(ClassUrl)
 def FindViedo (WebDriver) :
     '''
     寻找视频
@@ -62,7 +83,6 @@ def GotoCourse(course,WebDriver) :
     '''
     WebDriver.execute_script("arguments[0].scrollIntoView();",course)
     course.click()
-    return True
 def ShowTitle(WebDriver) :
     '''
     显示小节标题
@@ -91,83 +111,94 @@ def isVideoOver(WebDriver) :
     now = WebDriver.find_element_by_class_name('vjs-current-time-display').get_attribute('textContent')    
     print('已播放{}/{}'.format(now,duration))
     return duration == now
-def findanswer(problem) :
-    print(problem)
-    n = 0
-    daan = '答案'
-    file = open('answer.txt','rb')
-    answers = ['A','B','C','D','√','×']
-    lines = file.readlines()
-    file.close()
-    for i in range(2638):
+def ProbleminVideo(WebDriver) :
+    '''
+    处理视频中的题
+    '''
+    ProblemChoices = WebDriver.find_elements_by_name('ans-videoquiz-opt')
+    SubmitAnswer = WebDriver.find_element_by_class_name('ans-videoquiz-submit')
+    print('发现视频中题')
+    for i in range(len(ProblemChoices)) :
+        print('正在尝试第{}个选项'.format(i+1))
+        ProblemChoices = WebDriver.find_elements_by_name('ans-videoquiz-opt')
+        ProblemChoices[i].click()            
+        time.sleep(2)
+        SubmitAnswer.click()
+        time.sleep(2)
+        alert = driver.switch_to.alert
+        alert.accept()
+def FindProblems(WebDriver) :
+    '''
+    匹配所有题目的题干，返回一个题目列表
+    '''
+    text = WebDriver.find_elements_by_css_selector('.Zy_TItle')
+    problems = []
+    for i in range(len(text)) :
+        ProblemText = text[i].get_attribute('textContent')
+        ProblemText = FindProblemText.findall(ProblemText)[0]
+        ProblemText = ProblemText.lstrip('】').rstrip('（').rstrip('？').rstrip('。').rstrip('(')
+        problems.append(ProblemText)
+    return problems
+def FindAnswer(problem) :
+    '''
+    在题库中寻找题目的答案并返回
+    '''
+    j = 0
+    for i in range(6805):
         words = str(lines[i].decode('utf-8'))
         if problem[2:-2]in words:
-            n = i
+            j = i
             break
     while True :
-        words = str(lines[n].decode('utf-8'))
+        words = str(lines[j].decode('utf-8'))
         if daan in words :
-            for j in words :
-                if j in answers:
-                    return j
+            for char in words :
+                if char in answers:
+                    return char
             break
         else:
-            n += 1
+            j += 1
+
+
 
 # 启动浏览器
 driver = webdriver.Chrome()  
 # 登录并跳转到课程
-Username = input('请输入用户名')
-Password = input('请输入密码')
-for i in SupportSchool :
-    print(i,i[1][0],i[1][1])
-SchoolName = SupportSchool[input()][1]
-login(SchoolName,Username,Password,driver)
+login(SchoolName,UserName,Password,driver)
 # 前往指定课程
 GotoClass(driver)
 # 定位所有课
 courses = FindCourse(driver)
 count = 1
-for i in range(130,160) :
+for i in range(154,160) :
     # 定位所有课
     courses = FindCourse(driver)
     # 跳转到具体页面
-    DoGotoCourse = GotoCourse(courses[i],driver)
+    GotoCourse(courses[i],driver)
     # 显示标题
     time.sleep(2)
     ShowTitle(driver)
-    # 寻找是否有视频，无则返回
-    try:
-        VideoTag = driver.find_element_by_id('dct1')
-    except :
-        print('未发现视频，返回')
+    driver.switch_to.frame(0)
+    # 播放视频，无视频则返回
+    videoes = FindViedo(driver)
+    if len(videoes) == 0:
+        print('无视频，返回')
         GotoClass(driver)
         continue
-    driver.switch_to.frame(0)
-    # 播放视频
-    videoes = FindViedo(driver)
     for avideo in videoes:
+        driver.execute_script("arguments[0].scrollIntoView();",avideo)
         avideo.click()
+        print('开始播放视频')
         driver.switch_to.frame(avideo)
-    time.sleep(10)
-    
-    while not isVideoOver(driver) :       
-        time.sleep(10)        
-        try :
-            ProblemChoices = driver.find_elements_by_name('ans-videoquiz-opt')
-            SubmitAnswer = driver.find_element_by_class_name('ans-videoquiz-submit')
-            for i in range(len(ProblemChoices)) :
-                ProblemChoices = driver.find_elements_by_name('ans-videoquiz-opt')
-                ProblemChoices[i].click()            
-                time.sleep(2)
-                SubmitAnswer.click()
- 
-                time.sleep(2)
-                alert = driver.switch_to.alert
-                alert.accept()
-        except: 
-            continue
-    
+        time.sleep(10)
+        # 视频是否结束
+        while not isVideoOver(driver) :       
+            time.sleep(10)      
+            # 视频中是否有题，有则暴力尝试答题
+            try :
+                ProbleminVideo(driver)
+            except: 
+                continue    
     driver.switch_to.default_content()
     # 检查是否有题，有则跳转，否则进入下一课
     try :
@@ -175,24 +206,18 @@ for i in range(130,160) :
     except :
         GotoClass(driver)
         continue
-
     time.sleep(3)
     driver.switch_to.frame('iframe')
     driver.switch_to.frame(0)
     driver.switch_to.frame('frame_content') 
-    problems = driver.find_elements_by_css_selector('.Zy_TItle')
+    # 寻找所有题目
+    ProblemList = FindProblems(driver)
+    # 匹配题目答案
+    AnswerList = [FindAnswer(j) for j in ProblemList]
+    print('题目答案：',AnswerList)    
 
-    anslist = []
 
-    for j in problems:
-        text = j.get_attribute('textContent')
-        protext = findpro.findall(text)
-        for k in protext:           
-            k = k.lstrip('】').rstrip('（').rstrip('？').rstrip('。').rstrip('(')
-            m = findanswer(k)
-            anslist.append(m)
-            
-    print(anslist)    
+
     allinput = driver.find_elements_by_tag_name('input')
     allChoiceA = []
     allChoiceB = []
@@ -217,8 +242,8 @@ for i in range(130,160) :
 
     countChoice = len(allChoiceA)
     
-    for j in range(len(anslist)) :
-        tempans = anslist[j]
+    for j in range(len(AnswerList)) :
+        tempans = AnswerList[j]
         choose = webdriver.ActionChains(driver)
         if tempans == 'A' :
             target = allChoiceA[j]
@@ -266,5 +291,4 @@ for i in range(130,160) :
     confirm.click()
     count += 1
     driver.get('http://mooc1.elearning.shu.edu.cn/mycourse/studentcourse?courseId=204664376&clazzid=10593708&enc=8782736c942a7296a38d6ca117ebfe5f')
-        
         
