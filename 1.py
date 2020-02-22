@@ -22,6 +22,7 @@ for i in range(SupportSchool) :
     print(i,SupportSchool[i][0],SupportSchool[i][1])
 # 学校，用户名，密码，课程链接
 SchoolName = input('请输入学校序号')
+SchoolName = SupportSchool[SchoolName][1]
 UserName = input('请输入用户名')
 Password = input('请输入密码')
 ClassUrl = input('请输入课程链接')
@@ -158,6 +159,44 @@ def FindAnswer(problem) :
             break
         else:
             j += 1
+def FindProblemChoices(WebDriver) :
+    '''
+    寻找所有选项，返回一个字典
+    '''
+    AllChoices = {'A':[],'B':[],'C':[],'D':[],'':[],'×':[]}
+    AllInput = WebDriver.find_elements_by_tag_name('input')
+    for AInput in AllInput :
+        ChoiceValue = AInput.get_attribute('value')
+        if ChoiceValue =='true':
+            ChoiceValue = '√'
+        elif ChoiceValue == 'false':
+            ChoiceValue = '×'
+        try :
+            AllChoices[ChoiceValue].append(AInput)
+        except :
+            pass
+    return AllChoices
+def AnswerProblem(num,answer,choices,WebDriver) :
+    '''
+    回答问题，三个参数：题号，答案，存储所有选项的字典
+    '''
+    target = choices[answer][num]
+    WebDriver.execute_script("arguments[0].scrollIntoView();",target)
+    target.click()
+    print('第{}题，选择{}'.format(num+1,answer))
+def SubmitAnswer(WebDriver) :
+    '''
+    提交答案
+    '''
+    SubmitButton = WebDriver.find_element_by_css_selector('.Btn_blue_1')
+    SubmitButton.click()
+    moveup = webdriver.ActionChains(WebDriver)
+    moveup.send_keys(Keys.PAGE_UP)
+    moveup.perform()
+    time.sleep(2)
+    confirm = WebDriver.find_element_by_class_name('bluebtn ')
+    confirm.click()
+
 
 
 
