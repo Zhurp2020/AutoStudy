@@ -158,58 +158,19 @@ def FindAnswer(problem) :
             break
         else:
             j += 1
-def FindProblemChoices(WebDriver) :
-    '''
-    寻找所有选项，返回一个字典
-    '''
-    AllChoices = {'A':[],'B':[],'C':[],'D':[],'':[],'×':[]}
-    AllInput = WebDriver.find_elements_by_tag_name('input')
-    for AInput in AllInput :
-        ChoiceValue = AInput.get_attribute('value')
-        if ChoiceValue =='true':
-            ChoiceValue = '√'
-        elif ChoiceValue == 'false':
-            ChoiceValue = '×'
-        try :
-            AllChoices[ChoiceValue].append(AInput)
-        except :
-            pass
-    return AllChoices
-def AnswerProblem(num,answer,choices,WebDriver) :
-    '''
-    回答问题，三个参数：题号，答案，存储所有选项的字典
-    '''
-    target = choices[answer][num]
-    WebDriver.execute_script("arguments[0].scrollIntoView();",target)
-    target.click()
-    print('第{}题，选择{}'.format(num+1,answer))
-def SubmitAnswer(WebDriver) :
-    '''
-    提交答案
-    '''
-    SubmitButton = WebDriver.find_element_by_css_selector('.Btn_blue_1')
-    SubmitButton.click()
-    moveup = webdriver.ActionChains(WebDriver)
-    moveup.send_keys(Keys.PAGE_UP)
-    moveup.perform()
-    time.sleep(2)
-    confirm = WebDriver.find_element_by_class_name('bluebtn ')
-    confirm.click()
-
-
-
 
 
 
 # 启动浏览器
 driver = webdriver.Chrome()  
 # 登录并跳转到课程
-login(SupportSchool[SchoolName][1],UserName,Password,driver)
+login(SchoolName,UserName,Password,driver)
 # 前往指定课程
 GotoClass(driver)
 # 定位所有课
 courses = FindCourse(driver)
-for i in range(7,len(courses)) :
+count = 1
+for i in range(len(courses)) :
     # 定位所有课
     courses = FindCourse(driver)
     # 跳转到具体页面
@@ -224,13 +185,12 @@ for i in range(7,len(courses)) :
         print('无视频，返回')
         GotoClass(driver)
         continue
-    for j in range(len(videoes)):
-        videoes = FindViedo(driver)
-        driver.execute_script("arguments[0].scrollIntoView();",videoes[j])
-        videoes[j].click()
+    for avideo in videoes:
+        driver.execute_script("arguments[0].scrollIntoView();",avideo)
+        avideo.click()
         print('开始播放视频')
-        driver.switch_to.frame(videoes[j])
-        time.sleep(15)
+        driver.switch_to.frame(avideo)
+        time.sleep(10)
         # 视频是否结束
         while not isVideoOver(driver) :       
             time.sleep(10)      
@@ -238,8 +198,7 @@ for i in range(7,len(courses)) :
             try :
                 ProbleminVideo(driver)
             except: 
-                continue  
-        driver.switch_to.parent_frame()  
+                continue    
     driver.switch_to.default_content()
     # 检查是否有题，有则跳转，否则进入下一课
     try :
@@ -256,23 +215,58 @@ for i in range(7,len(courses)) :
     # 匹配题目答案
     AnswerList = [FindAnswer(j) for j in ProblemList]
     print('题目答案：',AnswerList)    
-    # 寻找所有选项，并给出选择题个数
-    AllChoicesDict = FindProblemChoices(driver)
-    CountChoice = len(AllChoicesDict['A'])
-    # 回答问题
+
+
+
+    allinput = driver.find_elements_by_tag_name('input')
+    allChoiceA = []
+    allChoiceB = []
+    allChoiceC = []
+    allChoiceD = []
+    allChoiceT = []
+    allChoiceF = []
+    for k in allinput :
+        choiceValue = k.get_attribute('value')
+        if choiceValue == 'A':
+            allChoiceA.append(k)
+        elif choiceValue == 'B':
+            allChoiceB.append(k)
+        elif choiceValue == 'C' :
+            allChoiceC.append(k) 
+        elif choiceValue == 'D':
+            allChoiceD.append(k)
+        elif choiceValue == 'true':
+            allChoiceT.append(k)
+        elif choiceValue == 'false':
+            allChoiceF.append(k)
+
+    countChoice = len(allChoiceA)
+    
     for j in range(len(AnswerList)) :
-        if AnswerList[j] == '×' or AnswerList[j] == '√':
-            AnswerProblem(j-CountChoice,AnswerList[j],AllChoicesDict,driver)
-        else :
-            AnswerProblem(j,AnswerList[j],AllChoicesDict,driver)
+        tempans = AnswerList[j]
+        choose = webdriver.ActionChains(driver)
+        if tempans == 'A' :
+            target = allChoiceA[j]
+        elif tempans == 'B':
+            target = allChoiceB[j]
+        elif tempans == 'C' :
+            target = allChoiceC[j]
+        elif tempans == 'D':
+            target = allChoiceD[j]
+        elif tempans == '√' :
+            target = allChoiceT[j-countChoice]
+        elif tempans == '×':
+            target = allChoiceF[j-countChoice]
+        driver.execute_script("arguments[0].scrollIntoView();",target)
+        target.click()
+        print('第{}题，选择{}'.format(j+1,tempans))
         time.sleep(2)
-    # 提交答案
-    SubmitAnswer(driver)
-    GotoClass(driver)
+    
 
-
-
+    submitans = driver.find_element_by_css_selector('.Btn_blue_1')
+    submitans.click()
     '''
+    if count >= 2 :
         driver.switch_to.default_content()
         image = driver.find_element_by_id('imgVerCode')
         print('输入验证码')
@@ -288,4 +282,13 @@ for i in range(7,len(courses)) :
         driver.switch_to.frame(0)
         driver.switch_to.frame('frame_content') 
     '''
-      
+    
+    moveup = webdriver.ActionChains(driver)
+    moveup.send_keys(Keys.PAGE_UP)
+    moveup.perform()
+    time.sleep(2)
+    confirm = driver.find_element_by_class_name('bluebtn ')
+    confirm.click()
+    count += 1
+    driver.get('http://mooc1.elearning.shu.edu.cn/mycourse/studentcourse?courseId=204664376&clazzid=10593708&enc=8782736c942a7296a38d6ca117ebfe5f')
+        
