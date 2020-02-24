@@ -8,7 +8,8 @@ import re
 
 # 定义常量
 # 用于匹配题目的正则表达式
-FindProblemText = re.compile(r'】.*?[？?（(。:]+')
+FindProblemText = re.compile(r'】.*?[？?（(。:：]+')
+FindChineseText = re.compile(r'[\u4e00-\u9fa5]+')
 # 用于匹配答案的字符串和列表
 daan = '答案'
 answers = ['A','B','C','D','√','×']
@@ -18,7 +19,7 @@ lines = file.readlines()
 file.close()
 # 支持的学校
 SupportSchool = {'1':['上海大学','SHU']}
-for i in range(SupportSchool) :
+for i in SupportSchool :
     print(i,SupportSchool[i][0],SupportSchool[i][1])
 # 学校，用户名，密码，课程链接
 SchoolName = input('请输入学校序号')
@@ -126,7 +127,7 @@ def ProbleminVideo(WebDriver) :
         time.sleep(2)
         SubmitAnswer.click()
         time.sleep(2)
-        alert = driver.switch_to.alert
+        alert = WebDriver.switch_to.alert
         alert.accept()
 def FindProblems(WebDriver) :
     '''
@@ -136,7 +137,10 @@ def FindProblems(WebDriver) :
     problems = []
     for i in range(len(text)) :
         ProblemText = text[i].get_attribute('textContent')
-        ProblemText = FindProblemText.findall(ProblemText)[0]
+        try :
+            ProblemText = FindProblemText.findall(ProblemText)[0]
+        except :
+            ProblemText = FindChineseText.findall(ProblemText)[0]
         ProblemText = ProblemText.lstrip('】').rstrip('（').rstrip('？').rstrip('。').rstrip('(')
         problems.append(ProblemText)
     return problems
@@ -200,93 +204,3 @@ def SubmitAnswer(WebDriver) :
 
 
 
-
-
-# 启动浏览器
-driver = webdriver.Chrome()  
-# 登录并跳转到课程
-login(SchoolName,UserName,Password,driver)
-# 前往指定课程
-GotoClass(driver)
-# 定位所有课
-courses = FindCourse(driver)
-for i in range(7,len(courses)) :
-    # 定位所有课
-    courses = FindCourse(driver)
-    # 跳转到具体页面
-    GotoCourse(courses[i],driver)
-    # 显示标题
-    time.sleep(2)
-    ShowTitle(driver)
-    driver.switch_to.frame(0)
-    # 播放视频，无视频则返回
-    videoes = FindViedo(driver)
-    if len(videoes) == 0:
-        print('无视频，返回')
-        GotoClass(driver)
-        continue
-    for j in range(len(videoes)):
-        videoes = FindViedo(driver)
-        driver.execute_script("arguments[0].scrollIntoView();",videoes[j])
-        videoes[j].click()
-        print('开始播放视频')
-        driver.switch_to.frame(videoes[j])
-        time.sleep(15)
-        # 视频是否结束
-        while not isVideoOver(driver) :       
-            time.sleep(10)      
-            # 视频中是否有题，有则暴力尝试答题
-            try :
-                ProbleminVideo(driver)
-            except: 
-                continue  
-        driver.switch_to.parent_frame()  
-    driver.switch_to.default_content()
-    # 检查是否有题，有则跳转，否则进入下一课
-    try :
-        FindTestTag(driver)
-    except :
-        GotoClass(driver)
-        continue
-    time.sleep(3)
-    driver.switch_to.frame('iframe')
-    driver.switch_to.frame(0)
-    driver.switch_to.frame('frame_content') 
-    # 寻找所有题目
-    ProblemList = FindProblems(driver)
-    # 匹配题目答案
-    AnswerList = [FindAnswer(j) for j in ProblemList]
-    print('题目答案：',AnswerList)    
-    # 寻找所有选项，并给出选择题个数
-    AllChoicesDict = FindProblemChoices(driver)
-    CountChoice = len(AllChoicesDict['A'])
-    # 回答问题
-    for j in range(len(AnswerList)) :
-        if AnswerList[j] == '×' or AnswerList[j] == '√':
-            AnswerProblem(j-CountChoice,AnswerList[j],AllChoicesDict,driver)
-        else :
-            AnswerProblem(j,AnswerList[j],AllChoicesDict,driver)
-        time.sleep(2)
-    # 提交答案
-    SubmitAnswer(driver)
-    GotoClass(driver)
-
-
-
-    '''
-        driver.switch_to.default_content()
-        image = driver.find_element_by_id('imgVerCode')
-        print('输入验证码')
-        vercode = input()
-        vercodeinput = driver.find_element_by_class_name('zc_input32')
-        confirmbtn = driver.find_element_by_class_name('zc_btn')
-        invercode = webdriver.ActionChains(driver)
-        invercode.click(vercodeinput)
-        invercode.send_keys_to_element(vercodeinput,vercode)
-        invercode.click(confirmbtn)
-        invercode.perform()
-        driver.switch_to.frame('iframe')
-        driver.switch_to.frame(0)
-        driver.switch_to.frame('frame_content') 
-    '''
-    
