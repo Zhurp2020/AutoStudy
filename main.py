@@ -57,7 +57,7 @@ def login(school,username,password,WebDriver) :
         InputAction.perform()
 def GotoClass(WebDriver) :
     '''
-    前往课程页面，driver为必选参数，url默认参数为安全课程
+    前往课程页面，driver为必选参数
     '''
     WebDriver.get(ClassUrl)
 def FindViedo (WebDriver) :
