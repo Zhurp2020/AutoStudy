@@ -18,7 +18,7 @@ file = open('answer.txt','rb')
 lines = file.readlines()
 file.close()
 # 支持的学校
-SupportSchool = {'1':['上海大学','SHU']}
+SupportSchool = {'1':['上海大学','SHU'],'2':['其他单位','others']}
 for i in SupportSchool :
     print(i,SupportSchool[i][0],SupportSchool[i][1])
 # 学校，用户名，密码，课程链接
@@ -53,6 +53,45 @@ def login(school,username,password,WebDriver) :
         InputAction.send_keys_to_element(UsernameInput,username)
         InputAction.click(PasswordInput)
         InputAction.send_keys_to_element(PasswordInput,password)
+        InputAction.click(LoginSubmit)
+        InputAction.perform()
+    else :
+        WebDriver.get('http://www.xuexi365.com/') # 超星平台登录
+        # 选择单位
+        ChooseSchool = WebDriver.find_element_by_class_name('Select')
+        ChooseSchool.click()
+        # 搜索学校
+        SchoolNameSearch = input('请输入学校名称')
+        SearchBar = WebDriver.find_element_by_class_name('zw_t_input')
+        SearchButton = WebDriver.find_element_by_class_name('zw_t_btn')
+        SearchSchool = webdriver.ActionChains(WebDriver)
+        SearchSchool.click(SearchBar)
+        SearchSchool.send_keys_to_element(SearchBar,SchoolNameSearch)
+        SearchSchool.click(SearchButton)
+        SearchSchool.perform()
+        time.sleep(3)
+        # 搜索结果
+        SearchAnswers = WebDriver.find_elements_by_css_selector('.zw_m_li')
+        for i in range(len(SearchAnswers)) :
+            if SearchAnswers[i].is_displayed():
+                name = SearchAnswers[i].get_attribute('textContent')
+                print(i,name)
+        SchoolNumber = input('请输入序号')
+        SearchAnswers[int(SchoolNumber)].click()
+        # 用户名密码输入框，提交按钮
+        UsernameInput = WebDriver.find_element_by_name('uname')
+        PasswordInput = WebDriver.find_element_by_name('password')
+        VerifyCodeInput = WebDriver.find_element_by_name('numcode')
+        LoginSubmit = WebDriver.find_element_by_name('button')
+        VerifyCode = input('请输入验证码')
+        # 输入用户名密码，提交       
+        InputAction = webdriver.ActionChains(WebDriver)
+        InputAction.click(UsernameInput)
+        InputAction.send_keys_to_element(UsernameInput,username)
+        InputAction.click(PasswordInput)
+        InputAction.send_keys_to_element(PasswordInput,password)
+        InputAction.click(VerifyCodeInput)
+        InputAction.send_keys_to_element(VerifyCodeInput,VerifyCode)
         InputAction.click(LoginSubmit)
         InputAction.perform()
 def GotoClass(WebDriver) :
