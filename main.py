@@ -239,7 +239,12 @@ def SubmitAnswer(WebDriver) :
     time.sleep(2)
     confirm = WebDriver.find_element_by_class_name('bluebtn ')
     confirm.click()
-
-
+def FindFile(WebDriver) :
+    '''
+    寻找所有文件的object id
+    '''
+    FileFrames = WebDriver.find_elements_by_tag_name('iframe')
+    Files = [i.get_attribute('objectid') for i in FileFrames]
+    return Files
 
 
