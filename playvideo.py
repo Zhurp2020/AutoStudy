@@ -9,7 +9,7 @@ login(SchoolName,UserName,Password,driver)
 GotoClass(driver)
 # 定位所有课
 courses = FindCourse(driver)
-for i in range(len(courses)) :
+for i in range(7,len(courses)) :
     # 定位所有课
     courses = FindCourse(driver)
     # 跳转到具体页面
@@ -20,11 +20,13 @@ for i in range(len(courses)) :
     driver.switch_to.frame(0)
     # 播放视频，无视频则返回
     videoes = FindViedo(driver)
-    if len(videoes) == 0:
+    audio = FindAudio(driver)
+    if len(videoes) == 0 and len(audio) == 0:
         print('无视频，返回')
         GotoClass(driver)
         continue
     for j in range(len(videoes)):
+        print('2')
         videoes = FindViedo(driver)
         driver.execute_script("arguments[0].scrollIntoView();",videoes[j])
         videoes[j].click()
@@ -39,6 +41,18 @@ for i in range(len(courses)) :
                 ProbleminVideo(driver)
             except: 
                 continue  
+        driver.switch_to.parent_frame()  
+    for j in range(len(audio)):
+        print('1')
+        audio = FindAudio(driver)
+        driver.execute_script("arguments[0].scrollIntoView();",audio[j])
+        driver.switch_to.frame(audio[j])
+        PlayAudio(driver)
+        print('开始播放音频')
+        time.sleep(15)
+        # 视频是否结束
+        while not isVideoOver(driver) :       
+            time.sleep(10)      
         driver.switch_to.parent_frame()  
     driver.switch_to.default_content()
     # 检查是否有题，有则跳转，否则进入下一课

@@ -246,5 +246,19 @@ def FindFile(WebDriver) :
     FileFrames = WebDriver.find_elements_by_tag_name('iframe')
     Files = [i.get_attribute('objectid') for i in FileFrames]
     return Files
-
-
+def FindAudio(WebDriver):
+    '''
+    音频任务
+    '''
+    AudioList = []
+    AudioClassName = 'ans-insertaudio'
+    frames = WebDriver.find_elements_by_tag_name('iframe')
+    for i in range(len(frames)):
+        frames = WebDriver.find_elements_by_tag_name('iframe')
+        classname = frames[i].get_attribute('class')
+        if AudioClassName in classname :
+            AudioList.append(frames[i])
+    return AudioList
+def PlayAudio(WebDriver):
+    PlayButtion = WebDriver.find_element_by_class_name('vjs-play-control')
+    PlayButtion.click()
